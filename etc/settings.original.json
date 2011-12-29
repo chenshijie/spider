@@ -12,6 +12,13 @@
     "172.16.39.117:3306:spider" : {
       "username" : "spider",
       "password" : "spider"
+    },
+    "baseurl" : {
+    	"host" : "172.16.39.117",
+    	"port" : 3306,
+    	"username" : "spider",
+      "password" : "spider",
+      "database" : "spider"
     }
   },
   "log" : {
