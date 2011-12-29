@@ -1,9 +1,4 @@
 {
-  "hook.io" : {
-    "host" : "127.0.0.1",
-    "port" : 5000,
-    "name" : "spider"
-   },
   "queue_server" : {
     "host" : "127.0.0.1",
     "port" : 3000,

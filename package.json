@@ -1,0 +1,22 @@
+{
+    "name": "spider",
+    "version": "0.0.1",
+    "description": "Spider Service",
+    "author": "shijie.chen <shijie.chen@gmail.com>",
+    "dependencies": {
+        "request": ">= 2.2.9",
+        "underscore": ">= 1.2.3",
+        "underscore.string" : "2.0.0",
+        "mysql": ">= 0.9.5",
+        "redis": ">= 0.7.1",
+        "devent": "https://github.com/netgen-inc/devent/tarball/master",
+        "queuer": "https://github.com/netgen-inc/queuer/tarball/master"
+    },
+    "scripts": {
+        "start": "node spider_server.js",
+        "start_refresher" : "node refresh_queue.js"
+    },
+    "engines": {
+        "node": "0.6.x"
+    }
+}

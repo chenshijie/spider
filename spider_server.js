@@ -10,14 +10,14 @@ var Spider = require('./lib/spiders').Spider;
 var config = __dirname + '/etc/settings.json';
 var configs = JSON.parse(fs.readFileSync(config, 'utf8'));
 var _logger = logger(__dirname + '/' + configs.log.file);
-var queue = require('../queuer/lib/queue');
+var queue = require('queuer');
 
 var db_options = configs.mysql;
 
 var databases = {};
 var spiders = [];
 
-var de = require('../event/lib/devent').createDEvent('spider');
+var de = require('event').createDEvent('spider');
 
 fs.writeFileSync(__dirname + '/run/server.lock', process.pid.toString(), 'ascii');
 
