@@ -1,0 +1,29 @@
+{
+  "hook.io" : {
+    "host" : "127.0.0.1",
+    "port" : 5000,
+    "name" : "spider"
+   },
+  "queue_server" : {
+    "host" : "127.0.0.1",
+    "port" : 3000,
+    "queue_path" : "queue"
+  },
+  "mysql" : {
+    "172.16.33.237:3306:stock_radar" : {
+      "username" : "stockradar",
+      "password" : "stockradar"
+    },
+    "172.16.39.117:3306:spider" : {
+      "username" : "spider",
+      "password" : "spider"
+    }
+  },
+  "log" : {
+    "file" : "log/spider.log"
+  },
+  "spider_count" : 50,
+  "spider_monitor_queue" : "url",
+  "spider_generate_queue" : "page_content",
+  "check_interval" : 2000
+}
