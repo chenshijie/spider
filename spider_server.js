@@ -36,7 +36,7 @@ for ( var i = 1; i < configs.spider_count + 1; i++) {
   spider.on('spider_ok', function(task) {
     //console.log('SERVER: ' + this.name + ' task-finished emmited');
     // var task_uri = utils.buildTaskURI(task.task);
-    var task_uri = task.task.original_task.uri;
+    //var task_uri = task.task.original_task.uri;
     //console.log('TASK_FINISHED: ' + this.name + ' : ' + task_uri + ' will be finished!');
     var run_time = utils.getTimestamp() - task.task.in_time;
     _logger.info([ 'TASK_FINISHED', this.name, 'RETRY:' + task.task.original_task.retry, task.task.original_task.uri, 'RUN_TIME:' + run_time ].join("\t"));
@@ -95,23 +95,6 @@ var spider2run = function(spider) {
       }
       var db = databases[key];
       spider.run(task_obj, db, _logger);
-    }
-  });
-};
-
-var spider2run_2 = function(spider) {
-  q4url.dequeue(function(error, task) {
-    if (error != 'empty') {
-      var time = utils.getTimestamp();
-      var task_obj = utils.parseTaskURI(task, time);
-      var key = task_obj.hostname + ':' + task_obj.port + ':' + task_obj.database;
-      var uname_passwd = configs.mysql[key];
-      if (databases[key] == undefined) {
-        var mysql = new MySqlClient(task_obj.hostname, task_obj.port, uname_passwd.username, uname_passwd.password, task_obj.database);
-        databases[key] = mysql;
-      }
-      var db = databases[key];
-      spider.emit('run', { task : task_obj, db : db });
     }
   });
 };
