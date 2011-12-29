@@ -26,7 +26,7 @@ var refresh_queue = function() {
   mysql.get_base_url(fetch_time, function(result) {
     var length = result.length;
     for ( var i = 0; i < length; i++) {
-      var task = 'mysql://' + configs.queue_server.host + ':' + configs.queue_server.port + '/' + configs.mysql.baseurl.database + '?baseurl#' + result[i].id;
+      var task = 'mysql://' + configs.mysql.baseurl.host + ':' + configs.mysql.baseurl.port + '/' + configs.mysql.baseurl.database + '?baseurl#' + result[i].id;
       _logger.info(task);
       q4url.enqueue(task);
     }

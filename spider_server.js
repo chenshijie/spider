@@ -17,7 +17,7 @@ var db_options = configs.mysql;
 var databases = {};
 var spiders = [];
 
-var de = require('event').createDEvent('spider');
+var de = require('devent').createDEvent('spider');
 
 fs.writeFileSync(__dirname + '/run/server.lock', process.pid.toString(), 'ascii');
 
