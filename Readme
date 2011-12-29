@@ -1,0 +1,52 @@
+#Step 1
+git clone https://github.com/netgen-inc/spider.git
+
+#Step 2
+cd spider
+
+#Step 3
+npm install -d
+
+#Step 4
+cd etc
+cp settings.original.json settings.json
+vim settings.json
+
+#Step 5
+#settings.json 说明
+{
+  "queue_server" : { //Queue Server
+    "host" : "127.0.0.1", //Queue Server IP
+    "port" : 3000, //Queue Server Port
+    "queue_path" : "queue" //Queue Server Path
+  },
+  "mysql" : {
+    "172.16.33.237:3306:stock_radar" : { //任务URI中的ip,端口和database
+      "username" : "stockradar",//任务中数据库用户名
+      "password" : "stockradar"//任务中数据库用密码
+    },
+    "172.16.39.117:3306:spider" : {
+      "username" : "spider",
+      "password" : "spider"
+    },
+    "baseurl" : {
+      "host" : "172.16.39.117", //BaseUrl表所在库的IP
+      "port" : 3306, //BaseUrl表所在库的端口 
+      "username" : "spider",//BaseUrl表所在库的用户名
+      "password" : "spider",//BaseUrl表所在库的密码
+      "database" : "spider" //BaseUrl表所在库的数据库名称
+    }
+  },
+  "log" : {
+    "file" : "log/spider.log" //Spider 日志文件
+  },
+  "spider_count" : 50, //同时最大请求数
+  "spider_monitor_queue" : "url",
+  "spider_generate_queue" : "page_content",
+  "check_interval" : 2000
+}
+
+
+#Step 6
+node spider_server.js
+node refresh_queue.js
