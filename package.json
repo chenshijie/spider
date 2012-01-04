@@ -9,6 +9,7 @@
         "underscore.string" : "2.0.0",
         "mysql": ">= 0.9.5",
         "redis": ">= 0.7.1",
+        "crypto": ">= 0.0.3",
         "devent": "https://github.com/netgen-inc/devent/tarball/master",
         "queuer": "https://github.com/netgen-inc/queuer/tarball/master"
     },

@@ -21,11 +21,17 @@
       "database" : "spider"
     }
   },
+  "redis" : {
+    "host" : "172.16.39.117",
+    "port" : 6379,
+    "db" : 14
+  },
   "log" : {
     "file" : "log/spider.log"
   },
   "spider_count" : 50,
   "spider_monitor_queue" : "url",
   "spider_generate_queue" : "page_content",
-  "check_interval" : 2000
+  "check_interval" : 2000,
+  "cache_time" ： 300
 }

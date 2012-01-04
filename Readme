@@ -29,6 +29,11 @@ vim settings.json
       "username" : "spider",
       "password" : "spider"
     },
+    "redis" : {
+      "host" : "172.16.39.117",  //redis服务器host
+      "port" : 6379,//redis服务器端口
+      "db" : 14 //redis数据库
+    },
     "baseurl" : {
       "host" : "172.16.39.117", //BaseUrl表所在库的IP
       "port" : 3306, //BaseUrl表所在库的端口 
