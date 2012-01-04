@@ -21,6 +21,7 @@ var refresh_queue = function() {
   if (current_time - last_run_time < time_step) {
     return;
   }
+  console.log(utils.getLocaleISOString() + ' refresher run');
   last_run_time = current_time;
   var fetch_time = current_time - time_step;
   mysql.get_base_url(fetch_time, function(result) {
@@ -33,7 +34,7 @@ var refresh_queue = function() {
   });
 };
 
-refresh_queue();
+//refresh_queue();
 
 setInterval(function() {
   refresh_queue();
