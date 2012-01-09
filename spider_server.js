@@ -1,30 +1,28 @@
 var http = require('http');
 var fs = require('fs');
 var MySqlClient = require('./lib/mysql').MySqlClient;
-var request = require('request');
 var logger = require('./lib/logger').logger;
 var utils = require('./lib/utils');
-
 var Spider = require('./lib/spiders').Spider;
-
-var config = __dirname + '/etc/settings.json';
-var configs = JSON.parse(fs.readFileSync(config, 'utf8'));
+var configs = require('./etc/settings.json');
 var _logger = logger(__dirname + '/' + configs.log.file);
 var queue = require('queuer');
 
 var redis = require("redis");
 var redisClient = redis.createClient(configs.redis.port, configs.redis.host);
 redisClient.select(configs.redis.db);
+redisClient.on('ready', function() {
+  redisClient.select(configs.redis.db);
+});
 
-var db_options = configs.mysql;
 var databases = {};
 var spiders = [];
 
-var de = require('devent').createDEvent('spider');
+var devent = require('devent').createDEvent('spider');
 
 fs.writeFileSync(__dirname + '/run/server.lock', process.pid.toString(), 'ascii');
 
-de.on('queued', function(queue) {
+devent.on('queued', function(queue) {
   // 同时多个队列进入时会调用allSpidersRun()多次。
   if (queue == 'url') {
     // console.log('SERVER: ' + queue + " received task");
@@ -40,7 +38,7 @@ for ( var i = 1; i < configs.spider_count + 1; i++) {
     var task = data.task;
     var run_time = utils.getTimestamp() - task.in_time;
     _logger.info([ 'TASK_FINISHED', this.name, 'RETRY:' + task.original_task.retry, task.original_task.uri, 'RUN_TIME:' + run_time ].join("\t"));
-    de.emit('task-finished', task.original_task);
+    devent.emit('task-finished', task.original_task);
   });
 
   spider.on('new_task', function(data) {
@@ -54,7 +52,7 @@ for ( var i = 1; i < configs.spider_count + 1; i++) {
     var task = data.task;
     var run_time = utils.getTimestamp() - task.in_time;
     _logger.info([ 'TASK_ERROR', this.name, task.original_task.retry, task.original_task.uri, 'RUN_TIME:' + run_time ].join("\t"));
-    de.emit('task-error', task.original_task);
+    devent.emit('task-error', task.original_task);
   });
 
   spiders.push(spider);
