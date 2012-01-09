@@ -41,9 +41,9 @@ for ( var i = 1; i < configs.spider_count + 1; i++) {
     devent.emit('task-finished', task.original_task);
   });
 
-  spider.on('new_task', function(data) {
+  spider.on('new_task', function(data, new_task_id) {
     var task = data.task;
-    var new_task = utils.buildTaskURI({ protocol : task.protocol, hostname : task.hostname, port : task.port, database : task.database, table : 'page_content', id : data.new_task_id });
+    var new_task = utils.buildTaskURI({ protocol : task.protocol, hostname : task.hostname, port : task.port, database : task.database, table : 'page_content', id : new_task_id });
     _logger.info([ 'NEWTASK', this.name, 'RETRY:' + task.original_task.retry, task.original_task.uri, new_task ].join("\t"));
     queue4page_content.enqueue(new_task);
   });
@@ -90,7 +90,9 @@ var startSimgleSpider = function(spider) {
         databases[key] = mysql;
       }
       var db = databases[key];
+      var options = { task : task_obj, db : db, redis : redisClient, redis_db : configs.redis.db, logger : configs.redis.db };
       spider.run(task_obj, db, redisClient, configs.redis.db, _logger);
+      spider.run(options);
     }
   });
 };
