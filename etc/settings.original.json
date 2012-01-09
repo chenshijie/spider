@@ -33,5 +33,5 @@
   "spider_monitor_queue" : "url",
   "spider_generate_queue" : "page_content",
   "check_interval" : 2000,
-  "cache_time" ： 300
+  "cache_time" : 300
 }
