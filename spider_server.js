@@ -91,7 +91,7 @@ var startSimgleSpider = function(spider) {
       }
       var db = databases[key];
       var options = { task : task_obj, db : db, redis : redisClient, redis_db : configs.redis.db, logger : configs.redis.db };
-      spider.run(task_obj, db, redisClient, configs.redis.db, _logger);
+      //spider.run(task_obj, db, redisClient, configs.redis.db, _logger);
       spider.run(options);
     }
   });
