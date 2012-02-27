@@ -4,27 +4,27 @@
     "port" : 3000,
     "queue_path" : "queue"
   },
-  "mysql" : {
-    "172.16.33.237:3306:stock_radar" : {
-      "username" : "stockradar",
-      "password" : "stockradar"
-    },
-    "172.16.39.117:3306:spider" : {
-      "username" : "spider",
-      "password" : "spider"
-    },
-    "baseurl" : {
-    	"host" : "172.16.39.117",
-    	"port" : 3306,
-    	"username" : "spider",
-      "password" : "spider",
-      "database" : "spider"
+  "mysql" : [
+    {
+      "host" : "127.0.0.1",
+      "port" : "3306",
+      "database" : "spider",
+      "user" : "root",
+      "password" : ""
     }
+  ],
+  "baseurl" : {
+      "host" : "127.0.0.1",
+      "port" : "3306",
+      "database" : "spider",
+      "user" : "root",
+      "password" : ""
   },
   "redis" : {
-    "host" : "172.16.39.117",
+    "host" : "127.0.0.1",
     "port" : 6379,
-    "db" : 14
+    "content_db" : 14,
+    "hash_db" : 13
   },
   "log" : {
     "file" : "log/spider.log"
