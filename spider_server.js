@@ -142,10 +142,12 @@ var getNewTask = function() {
 };
 
 var worker = Worker.getWorker();
-var workFlow = new WorkFlow([ prepareTask, worker.getTaskDetailFromDB, worker.getPageContentFromCache, worker.fetchPageContent, worker.savePageContent2Cache, worker.checkPageContent, worker.save2Database, worker.updateUrlInfo ], getCallback, getNewTask, 2);
+var workFlow = new WorkFlow([ prepareTask, worker.getTaskDetailFromDB, worker.getPageContentFromCache, worker.fetchPageContent, worker.savePageContent2Cache, worker.checkPageContent, worker.save2Database, worker.updateUrlInfo ], getCallback, getNewTask, configs.spider_count);
 
 setInterval(function() {
-  if (workFlow.getQueueLength() < 10) {
-    getNewTask();
+  if (workFlow.getQueueLength() < 50) {
+    for(i = 0; i < 50 - workFlow.getQueueLength(); i++) {
+      getNewTask();
+    }
   }
 }, configs.check_interval);
