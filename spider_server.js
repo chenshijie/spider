@@ -1,104 +1,151 @@
-var http = require('http');
 var fs = require('fs');
 var MySqlClient = require('./lib/mysql').MySqlClient;
 var logger = require('./lib/logger').logger;
 var utils = require('./lib/utils');
-var Spider = require('./lib/spiders').Spider;
 var configs = require('./etc/settings.json');
 var _logger = logger(__dirname + '/' + configs.log.file);
 var queue = require('queuer');
-
+var WorkFlow = require('./lib/workflow').WorkFlow;
+var Worker = require('./lib/worker');
+var request = require('request');
 var redis = require("redis");
 var redisClient = redis.createClient(configs.redis.port, configs.redis.host);
 redisClient.select(configs.redis.db);
 redisClient.on('ready', function() {
-  redisClient.select(configs.redis.db);
+  redisClient.select(configs.redis.content_db);
 });
 
-var databases = {};
-var spiders = [];
-
 var devent = require('devent').createDEvent('spider');
-
+// 将pid写入文件，以便翻滚日志时读取
 fs.writeFileSync(__dirname + '/run/server.lock', process.pid.toString(), 'ascii');
+// 页面内容队列
+var queue4PageContent = queue.getQueue('http://' + configs.queue_server.host + ':' + configs.queue_server.port + '/' + configs.queue_server.queue_path, configs.spider_generate_queue);
+// url队列
+var queue4Url = queue.getQueue('http://' + configs.queue_server.host + ':' + configs.queue_server.port + '/' + configs.queue_server.queue_path, configs.spider_monitor_queue);
+
+var databases = {};
+// 准备数据库队列
+var i = 0;
+for ( i = 0; i < configs.mysql.length; i++) {
+  var options = configs.mysql[i];
+  var key = options.host + ':' + options.port + ':' + options.database;
+  var mysql = new MySqlClient(options);
+  databases[key] = mysql;
+}
 
 devent.on('queued', function(queue) {
   // 同时多个队列进入时会调用allSpidersRun()多次。
   if (queue == 'url') {
-    // console.log('SERVER: ' + queue + " received task");
+    console.log('SERVER: ' + queue + " received task");
     // allSpidersRun();
   }
 });
 
-var queue4page_content = queue.getQueue('http://' + configs.queue_server.host + ':' + configs.queue_server.port + '/' + configs.queue_server.queue_path, configs.spider_generate_queue);
-// init spider
-for ( var i = 1; i < configs.spider_count + 1; i++) {
-  var spider = new Spider('spider_' + i, configs.cache_time || 300);
-  spider.on('spider_finished', function(data) {
-    var task = data.task;
-    var run_time = utils.getTimestamp() - task.in_time;
-    _logger.info([ 'TASK_FINISHED', this.name, 'RETRY:' + task.original_task.retry, task.original_task.uri, 'RUN_TIME:' + run_time ].join("\t"));
-    devent.emit('task-finished', task.original_task);
-  });
-
-  spider.on('new_task', function(data, new_task_id) {
-    var task = data.task;
-    var new_task = utils.buildTaskURI({ protocol : task.protocol, hostname : task.hostname, port : task.port, database : task.database, table : 'page_content', id : new_task_id });
-    _logger.info([ 'NEWTASK', this.name, 'RETRY:' + task.original_task.retry, task.original_task.uri, new_task ].join("\t"));
-    queue4page_content.enqueue(new_task);
-  });
-
-  spider.on('spider_error', function(data) {
-    var task = data.task;
-    var run_time = utils.getTimestamp() - task.in_time;
-    _logger.info([ 'TASK_ERROR', this.name, task.original_task.retry, task.original_task.uri, 'RUN_TIME:' + run_time ].join("\t"));
-    devent.emit('task-error', task.original_task);
-  });
-
-  spiders.push(spider);
+var databases = {};
+for ( i = 0; i < configs.mysql.length; i++) {
+  var option = configs.mysql[i];
+  var key = option.host + ':' + option.port + ':' + option.database;
+  console.log(key);
+  var mysql = new MySqlClient(option);
+  databases[key] = mysql;
 }
 
-var queue4url = queue.getQueue('http://' + configs.queue_server.host + ':' + configs.queue_server.port + '/' + configs.queue_server.queue_path, configs.spider_monitor_queue);
-var all_spiders_last_start_time = new Date().getTime();
+var queue4PageContent = queue.getQueue('http://' + configs.queue_server.host + ':' + configs.queue_server.port + '/' + configs.queue_server.queue_path, configs.spider_generate_queue);
+var queue4Url = queue.getQueue('http://' + configs.queue_server.host + ':' + configs.queue_server.port + '/' + configs.queue_server.queue_path, configs.spider_monitor_queue);
 
-var allSpidersRun = function() {
-  var time1 = new Date().getTime() - all_spiders_last_start_time;
-  if (time1 < 1000) {
-    console.log('################## the time between 2 allSpidersRun is too short (less than 1 second) ##################');
-    return;
-  }
-  all_spiders_last_start_time = new Date().getTime();
-  for ( var i = 0; i < configs.spider_count; i++) {
-    var spider = spiders[i];
-    if (spider.getStatus() == 'waiting') {
-      startSimgleSpider(spider);
+/**
+ * 对task进行准备工作
+ * 
+ * @param task
+ * @param callback
+ */
+var prepareTask = function(task, callback) {
+  console.log('----------> prepareTask <-----------');
+  if (task.original_task.retry >= 10) {
+    var error = {
+      error : 'TASK_RETRY_TIMES_LIMITED',
+      msg : 'try to deal with the task more than 10 times'
+    };
+    callback(error, task);
+  } else {
+    var key = task.hostname + ':' + task.port + ':' + task.database;
+    var db = databases[key];
+    if (db != undefined) {
+      task['mysql'] = db;
+      task['redis'] = redisClient;
+      task['logger'] = _logger;
+      task['cache_time'] = configs.cache_time;
+      callback(null, task);
+    } else {
+      var error = {
+        error : 'TASK_DB_NOT_FOUND',
+        msg : 'cant not find the database configs included by task URI'
+      };
+      callback(error, task);
     }
-
   }
 };
+var getCallback = function(info) {
+  return function(err, ret) {
+    if (err == null) {
+      // 所有步骤完成,任务完成
+      console.log('task-finished : ' + info.original_task.uri);
+      devent.emit('task-finished', info.original_task);
+      // 如果页面内容被保存到服务器,将新任务加入到队列
+      if (info.save2DBOK && info.new_task_id > 0) {
+        var new_task = utils.buildTaskURI({
+          protocol : info.protocol,
+          hostname : info.hostname,
+          port : info.port,
+          database : info.database,
+          table : 'page_content',
+          id : info.new_task_id
+        });
+        console.log('NEW_TASK: ' + new_task);
+        queue4PageContent.enqueue(new_task);
+      }
+    } else if (err.error == 'TASK_RETRY_TIMES_LIMITED') {
+      console.log('任务尝试次数太多,通知队列任务完成,不在继续尝试');
+      devent.emit('task-finished', info.original_task);
+    } else if (err.error == 'TASK_DB_NOT_FOUND') {
+      console.log('TASK_DB_NOT_FOUND');
+      devent.emit('task-finished', info.original_task);
+    } else if (err.error == 'TASK_URL_NOT_FOUND') {
+      devent.emit('task-finished', info.original_task);
+    } else if (err.error == 'PAGE_CONTENT_UNCHANGED') {
+      console.log('page content is not changed');
+      devent.emit('task-finished', info.original_task);
+    } else if (err.error == 'FETCH_URL_ERROR') {
+      devent.emit('task-error', info.original_task);
+    } else if (err.error == 'PAGE_CONTENT_SAVE_2_DB_ERROR') {
+      devent.emit('task-error', info.original_task);
+    } else {
+      console.log(err);
+    }
+  };
+};
 
-var startSimgleSpider = function(spider) {
-  queue4url.dequeue(function(error, task) {
-    if (error != 'empty') {
-      _logger.info([ 'TASK_POPED', spider.getName(), task.retry, task.uri ].join("\t"));
+/**
+ * 从队列中获取新任务,取到新任务将其压入workFlow队列
+ */
+var getNewTask = function() {
+  console.log('----------> getNewTask <-----------');
+  queue4Url.dequeue(function(error, task) {
+    if (error != 'empty' && task != undefined) {
       var time = utils.getTimestamp();
       var task_obj = utils.parseTaskURI(task, time);
-      var key = task_obj.hostname + ':' + task_obj.port + ':' + task_obj.database;
-      var uname_passwd = configs.mysql[key];
-      if (databases[key] == undefined) {
-        var mysql = new MySqlClient(task_obj.hostname, task_obj.port, uname_passwd.username, uname_passwd.password, task_obj.database);
-        databases[key] = mysql;
-      }
-      var db = databases[key];
-      var options = { task : task_obj, db : db, redis : redisClient, redis_db : configs.redis.db, logger : configs.redis.db };
-      //spider.run(task_obj, db, redisClient, configs.redis.db, _logger);
-      spider.run(options);
+      workFlow.push(task_obj);
+    } else {
+      console.log('task queue is empty');
     }
   });
 };
 
-setInterval(function() {
-  allSpidersRun();
-}, configs.check_interval);
+var worker = Worker.getWorker();
+var workFlow = new WorkFlow([ prepareTask, worker.getTaskDetailFromDB, worker.getPageContentFromCache, worker.fetchPageContent, worker.savePageContent2Cache, worker.checkPageContent, worker.save2Database, worker.updateUrlInfo ], getCallback, getNewTask, 2);
 
-console.log('Server Started ' + utils.getLocaleISOString());
+setInterval(function() {
+  if (workFlow.getQueueLength() < 10) {
+    getNewTask();
+  }
+}, configs.check_interval);
