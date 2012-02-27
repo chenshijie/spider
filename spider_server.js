@@ -26,7 +26,7 @@ var queue4Url = queue.getQueue('http://' + configs.queue_server.host + ':' + con
 var databases = {};
 // 准备数据库队列
 var i = 0;
-for ( i = 0; i < configs.mysql.length; i++) {
+for (i = 0; i < configs.mysql.length; i++) {
   var options = configs.mysql[i];
   var key = options.host + ':' + options.port + ':' + options.database;
   var mysql = new MySqlClient(options);
@@ -36,16 +36,15 @@ for ( i = 0; i < configs.mysql.length; i++) {
 devent.on('queued', function(queue) {
   // 同时多个队列进入时会调用allSpidersRun()多次。
   if (queue == 'url') {
-    console.log('SERVER: ' + queue + " received task");
+    // console.log('SERVER: ' + queue + " received task");
     // allSpidersRun();
   }
 });
 
 var databases = {};
-for ( i = 0; i < configs.mysql.length; i++) {
+for (i = 0; i < configs.mysql.length; i++) {
   var option = configs.mysql[i];
   var key = option.host + ':' + option.port + ':' + option.database;
-  console.log(key);
   var mysql = new MySqlClient(option);
   databases[key] = mysql;
 }
@@ -60,7 +59,9 @@ var queue4Url = queue.getQueue('http://' + configs.queue_server.host + ':' + con
  * @param callback
  */
 var prepareTask = function(task, callback) {
-  console.log('----------> prepareTask <-----------');
+  if (configs.debug) {
+    console.log('----------> prepareTask <-----------');
+  }
   if (task.original_task.retry >= 10) {
     var error = {
       error : 'TASK_RETRY_TIMES_LIMITED',
@@ -75,6 +76,7 @@ var prepareTask = function(task, callback) {
       task['redis'] = redisClient;
       task['logger'] = _logger;
       task['cache_time'] = configs.cache_time;
+      task['debug'] = configs.debug;
       callback(null, task);
     } else {
       var error = {
@@ -108,15 +110,17 @@ var getCallback = function(info) {
       console.log('任务尝试次数太多,通知队列任务完成,不在继续尝试');
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'TASK_DB_NOT_FOUND') {
-      console.log('TASK_DB_NOT_FOUND');
+      console.log('TASK_DB_NOT_FOUND: ' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'TASK_URL_NOT_FOUND') {
+      console.log('TASK_URL_NOT_FOUND: ' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'PAGE_CONTENT_UNCHANGED') {
-      console.log('page content is not changed');
+      console.log('page content is not changed: ' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'FETCH_URL_ERROR') {
-      devent.emit('task-error', info.original_task);
+      console.log('FETCH_URL_ERROR do nothing:' + info.original_task.uri);
+      // devent.emit('task-error', info.original_task);
     } else if (err.error == 'PAGE_CONTENT_SAVE_2_DB_ERROR') {
       devent.emit('task-error', info.original_task);
     } else {
@@ -129,14 +133,16 @@ var getCallback = function(info) {
  * 从队列中获取新任务,取到新任务将其压入workFlow队列
  */
 var getNewTask = function() {
-  console.log('----------> getNewTask <-----------');
+  if (configs.debug) {
+    console.log('----------> getNewTask <-----------');
+  }
   queue4Url.dequeue(function(error, task) {
     if (error != 'empty' && task != undefined) {
       var time = utils.getTimestamp();
       var task_obj = utils.parseTaskURI(task, time);
       workFlow.push(task_obj);
     } else {
-      console.log('task queue is empty');
+      // console.log('task queue is empty');
     }
   });
 };
@@ -146,8 +152,10 @@ var workFlow = new WorkFlow([ prepareTask, worker.getTaskDetailFromDB, worker.ge
 
 setInterval(function() {
   if (workFlow.getQueueLength() < 50) {
-    for(i = 0; i < 50 - workFlow.getQueueLength(); i++) {
+    for ( var i = 0; i < 50 - workFlow.getQueueLength(); i++) {
       getNewTask();
     }
   }
 }, configs.check_interval);
+
+console.log('Server Started ' + utils.getLocaleISOString());
