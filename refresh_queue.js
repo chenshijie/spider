@@ -1,7 +1,7 @@
 var MySqlClient = require('./lib/mysql').MySqlClient;
 var fs = require('fs');
 
-var configs = require('./etc/newsettings.json');
+var configs = require('./etc/settings.json');
 var logger = require('./lib/logger').logger;
 var _logger = logger(__dirname + '/log/refresh.log');
 var utils = require('./lib/utils');
