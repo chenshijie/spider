@@ -35,3 +35,5 @@ var refresh_queue = function() {
 setInterval(function() {
   refresh_queue();
 }, 60 * 1000);
+
+console.log('Server Started ' + utils.getLocaleISOString());
