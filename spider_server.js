@@ -106,6 +106,9 @@ var getCallback = function(info) {
         console.log('NEW_TASK: ' + new_task);
         queue4PageContent.enqueue(new_task);
       }
+      if (info.pageContentUnchanged) {
+        console.log('page content is not changed: ' + info.original_task.uri);
+      }
     } else if (err.error == 'TASK_RETRY_TIMES_LIMITED') {
       console.log('任务尝试次数太多,通知队列任务完成,不在继续尝试');
       devent.emit('task-finished', info.original_task);
