@@ -91,7 +91,7 @@ var getCallback = function(info) {
   return function(err, ret) {
     if (err == null) {
       // 所有步骤完成,任务完成
-      console.log('task-finished : ' + info.original_task.uri);
+      console.log(utils.getLocaleISOString() + ' task-finished : ' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
       // 如果页面内容被保存到服务器,将新任务加入到队列
       if (info.save2DBOK && info.new_task_id > 0) {
@@ -107,7 +107,7 @@ var getCallback = function(info) {
         queue4PageContent.enqueue(new_task);
       }
       if (info.pageContentUnchanged) {
-        console.log(utils.getLocaleISOString() +  'page content is not changed: ' + info.original_task.uri);
+        console.log(utils.getLocaleISOString() + ' page content is not changed: ' + info.original_task.uri);
       }
     } else if (err.error == 'TASK_RETRY_TIMES_LIMITED') {
       console.log(utils.getLocaleISOString() + ' 任务尝试次数太多,通知队列任务完成,不在继续尝试' + info.original_task.uri);
