@@ -41,6 +41,8 @@ devent.on('queued', function(queue) {
   }
 });
 
+var sina_limit = 0;
+
 var databases = {};
 for (i = 0; i < configs.mysql.length; i++) {
   var option = configs.mysql[i];
@@ -122,6 +124,7 @@ var getCallback = function(info) {
       console.log(utils.getLocaleISOString() + ' PAGE_CONTENT_UNCHANGED: ' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'FETCH_URL_ERROR') {
+      sina_limit = utils.getTimestamp();
       console.log(utils.getLocaleISOString() + ' FETCH_URL_ERROR do nothing:' + info.original_task.uri);
       // devent.emit('task-error', info.original_task);
     } else if (err.error == 'PAGE_CONTENT_SAVE_2_DB_ERROR') {
@@ -154,7 +157,8 @@ var worker = Worker.getWorker();
 var workFlow = new WorkFlow([ prepareTask, worker.getTaskDetailFromDB, worker.getPageContentFromCache, worker.fetchPageContent, worker.savePageContent2Cache, worker.checkPageContent, worker.save2Database, worker.updateUrlInfo ], getCallback, getNewTask, configs.spider_count);
 
 setInterval(function() {
-  if (workFlow.getQueueLength() < 50) {
+  var time_stamp = utils.getTimestamp();
+  if (time_stamp - sina_limit > 60 && workFlow.getQueueLength() < 50) {
     for ( var i = 0; i < 50 - workFlow.getQueueLength(); i++) {
       getNewTask();
     }
