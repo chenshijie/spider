@@ -103,26 +103,26 @@ var getCallback = function(info) {
           table : 'page_content',
           id : info.new_task_id
         });
-        console.log('NEW_TASK: ' + new_task);
+        console.log(utils.getLocaleISOString() + ' NEW_TASK: ' + new_task);
         queue4PageContent.enqueue(new_task);
       }
       if (info.pageContentUnchanged) {
-        console.log('page content is not changed: ' + info.original_task.uri);
+        console.log(utils.getLocaleISOString() +  'page content is not changed: ' + info.original_task.uri);
       }
     } else if (err.error == 'TASK_RETRY_TIMES_LIMITED') {
-      console.log('任务尝试次数太多,通知队列任务完成,不在继续尝试');
+      console.log(utils.getLocaleISOString() + ' 任务尝试次数太多,通知队列任务完成,不在继续尝试' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'TASK_DB_NOT_FOUND') {
-      console.log('TASK_DB_NOT_FOUND: ' + info.original_task.uri);
+      console.log(utils.getLocaleISOString() + ' TASK_DB_NOT_FOUND: ' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'TASK_URL_NOT_FOUND') {
-      console.log('TASK_URL_NOT_FOUND: ' + info.original_task.uri);
+      console.log(utils.getLocaleISOString() + ' TASK_URL_NOT_FOUND: ' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'PAGE_CONTENT_UNCHANGED') {
-      console.log('page content is not changed: ' + info.original_task.uri);
+      console.log(utils.getLocaleISOString() + ' PAGE_CONTENT_UNCHANGED: ' + info.original_task.uri);
       devent.emit('task-finished', info.original_task);
     } else if (err.error == 'FETCH_URL_ERROR') {
-      console.log('FETCH_URL_ERROR do nothing:' + info.original_task.uri);
+      console.log(utils.getLocaleISOString() + ' FETCH_URL_ERROR do nothing:' + info.original_task.uri);
       // devent.emit('task-error', info.original_task);
     } else if (err.error == 'PAGE_CONTENT_SAVE_2_DB_ERROR') {
       devent.emit('task-error', info.original_task);
