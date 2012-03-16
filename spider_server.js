@@ -157,7 +157,7 @@ var getNewTask = function() {
 };
 
 var worker = Worker.getWorker();
-var workFlow = new WorkFlow([ prepareTask, worker.getTaskDetailFromDB, worker.getPageContentFromCache, worker.fetchPageContent, worker.savePageContent2Cache, worker.checkPageContent, worker.save2Database, worker.updateUrlInfo ], getCallback, getNewTask, configs.spider_count);
+var workFlow = new WorkFlow([ prepareTask, worker.getTaskDetailFromDB, worker.getPageContentFromCache, worker.fetchPageContentViaHttp, worker.savePageContent2Cache, worker.checkPageContent, worker.save2Database, worker.updateUrlInfo ], getCallback, getNewTask, configs.spider_count);
 
 setInterval(function() {
   var time_stamp = utils.getTimestamp();
