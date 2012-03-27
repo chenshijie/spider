@@ -9,7 +9,7 @@ var mysql = new MySqlClient(configs.baseurl);
 var queue = require('queuer');
 var q4url = queue.getQueue('http://' + configs.queue_server.host + ':' + configs.queue_server.port + '/' + configs.queue_server.queue_path, configs.spider_monitor_queue);
 
-var base_url_count = 500;
+var base_url_count = 2500;
 var refresh_queue = function() {
   var current_time = utils.getTimestamp();
   var hour = new Date().getHours();
@@ -28,12 +28,23 @@ var refresh_queue = function() {
       q4url.enqueue(task);
     }
   });
+  if(hour == 9 || hour == 20) {
+    mysql.get_base_url_bulletin(fetch_time, base_url_count, function(result) {
+      var length = result.length;
+      for ( var i = 0; i < length; i++) {
+        var task = 'mysql://' + configs.baseurl.host + ':' + configs.baseurl.port + '/' + configs.baseurl.database + '?baseurl#' + result[i].id;
+        console.log(task);
+        _logger.info(task);
+        q4url.enqueue(task);
+      }
+    });
+  }
 };
 
 // refresh_queue();
 
 setInterval(function() {
   refresh_queue();
-}, 60 * 1000);
+}, 300 * 1000);
 
 console.log('Server Started ' + utils.getLocaleISOString());
