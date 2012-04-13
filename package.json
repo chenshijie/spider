@@ -11,7 +11,8 @@
         "mysql": ">= 0.9.5",
         "redis": ">= 0.7.1",
         "crypto": ">= 0.0.3",
-        "vows": ">=0.6.1",
+        "vows": ">= 0.6.1",
+        "express": ">= 2.5.9",
         "devent": "https://github.com/netgen-inc/devent/tarball/master",
         "queuer": "https://github.com/netgen-inc/queuer/tarball/master"
     },

@@ -14,7 +14,6 @@ redisClient.select(configs.redis.db);
 redisClient.on('ready', function() {
   redisClient.select(configs.redis.content_db);
 });
-
 var devent = require('devent').createDEvent('spider');
 // 将pid写入文件，以便翻滚日志时读取
 fs.writeFileSync(__dirname + '/run/server.lock', process.pid.toString(), 'ascii');
@@ -56,7 +55,7 @@ var queue4Url = queue.getQueue('http://' + configs.queue_server.host + ':' + con
 
 /**
  * 对task进行准备工作
- * 
+ *
  * @param task
  * @param callback
  */
@@ -66,8 +65,8 @@ var prepareTask = function(task, callback) {
   }
   if (task.original_task.retry >= 10) {
     var error = {
-      error : 'TASK_RETRY_TIMES_LIMITED',
-      msg : 'try to deal with the task more than 10 times'
+      error: 'TASK_RETRY_TIMES_LIMITED',
+      msg: 'try to deal with the task more than 10 times'
     };
     callback(error, task);
   } else {
@@ -82,8 +81,8 @@ var prepareTask = function(task, callback) {
       callback(null, task);
     } else {
       var error = {
-        error : 'TASK_DB_NOT_FOUND',
-        msg : 'cant not find the database configs included by task URI'
+        error: 'TASK_DB_NOT_FOUND',
+        msg: 'cant not find the database configs included by task URI'
       };
       callback(error, task);
     }
@@ -98,12 +97,12 @@ var getCallback = function(info) {
       // 如果页面内容被保存到服务器,将新任务加入到队列
       if (info.save2DBOK && info.new_task_id > 0) {
         var new_task = utils.buildTaskURI({
-          protocol : info.protocol,
-          hostname : info.hostname,
-          port : info.port,
-          database : info.database,
-          table : 'page_content',
-          id : info.new_task_id
+          protocol: info.protocol,
+          hostname: info.hostname,
+          port: info.port,
+          database: info.database,
+          table: 'page_content',
+          id: info.new_task_id
         });
         console.log(utils.getLocaleISOString() + ' NEW_TASK: ' + new_task);
         queue4PageContent.enqueue(new_task);
@@ -127,6 +126,9 @@ var getCallback = function(info) {
       sina_limit = utils.getTimestamp();
       console.log(utils.getLocaleISOString() + ' FETCH_URL_ERROR do nothing:' + info.original_task.uri);
       // devent.emit('task-error', info.original_task);
+    } else if (err.error == 'FETCH_URL_TIME_OUT') {
+      console.log(utils.getLocaleISOString() + ' FETCH_URL_TIME_OUT emit task-error:' + info.original_task.uri);
+      devent.emit('task-error', info.original_task);
     } else if (err.error == 'PAGE_CONTENT_SAVE_2_DB_ERROR') {
       devent.emit('task-error', info.original_task);
     } else {
@@ -157,15 +159,35 @@ var getNewTask = function() {
 };
 
 var worker = Worker.getWorker();
-var workFlow = new WorkFlow([ prepareTask, worker.getTaskDetailFromDB, worker.getPageContentFromCache, worker.fetchPageContentViaHttp, worker.savePageContent2Cache, worker.checkPageContent, worker.save2Database, worker.updateUrlInfo ], getCallback, getNewTask, configs.spider_count);
+var workFlow = new WorkFlow([prepareTask, worker.getTaskDetailFromDB, worker.getPageContentFromCache, worker.fetchPageContentViaHttp, worker.savePageContent2Cache, worker.checkPageContent, worker.save2Database, worker.updateUrlInfo], getCallback, getNewTask, configs.spider_count);
 
 setInterval(function() {
   var time_stamp = utils.getTimestamp();
   if (time_stamp - sina_limit > 60 && workFlow.getQueueLength() < 50) {
-    for ( var i = 0; i < 50 - workFlow.getQueueLength(); i++) {
+    for (var i = 0; i < 50 - workFlow.getQueueLength(); i++) {
       getNewTask();
     }
   }
-}, configs.check_interval);
+},
+configs.check_interval);
 
 console.log('Server Started ' + utils.getLocaleISOString());
+
+//
+if (configs.monitor) {
+  var express = require('express');
+  var monitorServer = express.createServer();
+  monitorServer.configure(function() {
+    monitorServer.use(express.static(__dirname + '/public'));
+  });
+
+  monitorServer.get('/Monitor/WorkerCount', function(req, res) {
+    var worker_count = workFlow.getQueueLength();
+    console.log(worker_count);
+    res.end(worker_count + '');
+    //res.end(worker_count);
+  });
+
+  monitorServer.listen(9527);
+}
+
