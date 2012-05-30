@@ -134,6 +134,7 @@ var getCallback = function(info) {
     } else {
       console.log(err);
     }
+    getNewTask();
   };
 };
 
@@ -144,18 +145,15 @@ var getNewTask = function() {
   if (configs.debug) {
     console.log('----------> getNewTask <-----------');
   }
-  var time_stamp = utils.getTimestamp();
-  if (time_stamp - sina_limit > 60) {
-    queue4Url.dequeue(function(error, task) {
-      if (error != 'empty' && task != undefined) {
-        var time = utils.getTimestamp();
-        var task_obj = utils.parseTaskURI(task, time);
-        workFlow.push(task_obj);
-      } else {
-        // console.log('task queue is empty');
-      }
-    });
-  }
+  queue4Url.dequeue(function(error, task) {
+    if (error != 'empty' && task != undefined) {
+      var time = utils.getTimestamp();
+      var task_obj = utils.parseTaskURI(task, time);
+      workFlow.push(task_obj);
+    } else {
+      // console.log('task queue is empty');
+    }
+  });
 };
 
 var worker = Worker.getWorker();
