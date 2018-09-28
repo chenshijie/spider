@@ -3,25 +3,26 @@
 #Spider
 
 A server for fetching url from web site by url
-##Installation
+## Installation
 
-###Clone code from github
+### Clone code from github
 
     $git clone https://github.com/netgen-inc/spider.git
 
-###Install dependencies
+### Install dependencies
 
     $cd spider
     $npm install -d
     
-###Modify configuration file
+### Modify configuration file
 
     $cd etc
     $cp settings.original.json settings.json
     $vim settings.json
     
-###settings.json 说明
-···
+### settings.json 说明
+
+```
     {
       "queue_server" : { //Queue Server
         "host" : "127.0.0.1", //Queue Server IP
@@ -58,10 +59,10 @@ A server for fetching url from web site by url
       "spider_generate_queue" : "page_content",
       "check_interval" : 2000
     }
-    ···
+```
 
 
-##Start the spider server
+## Start the spider server
     $node spider_server.js  
-##Start refresh server
+## Start refresh server
     $node refresh_queue.js
